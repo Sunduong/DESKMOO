@@ -221,12 +221,12 @@ void lcd_fill_rect(lcd_t *lcd, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y
     Upgrade later for timeout + error handling */
     ESP_ERROR_CHECK(spi_device_acquire_bus(lcd->spi, portMAX_DELAY));
 
-    if (lcd == NULL) return;
-    if (x1 > x2 || y1 > y2) return;
-    if (x1 >= lcd->width || y1 >= lcd->height) return;
+    // if (lcd == NULL) return;
+    // if (x1 > x2 || y1 > y2) return;
+    // if (x1 >= lcd->width || y1 >= lcd->height) return;
     
-    if (x2 >= lcd->width) x2 = lcd->width - 1;
-    if (y2 >= lcd->height) y2 = lcd->height - 1;
+    // if (x2 >= lcd->width) x2 = lcd->width - 1;
+    // if (y2 >= lcd->height) y2 = lcd->height - 1;
 
     // Set the drawing window
     lcd_set_window(lcd, x1, y1, x2, y2);
