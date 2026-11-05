@@ -1,0 +1,22 @@
+# ESP-IDF build output
+build/
+sdkconfig
+sdkconfig.old
+
+# ESP-IDF component manager
+managed_components/
+
+# ESP-IDF generated files
+sdkconfig.old
+pytest_blink.py
+sdkconfig.defaults.esp32
+sdkconfig.defaults.esp32c3
+sdkconfig.defaults.esp32c5
+sdkconfig.defaults.esp32c6
+sdkconfig.defaults.esp32h2
+sdkconfig.defaults.esp32s2
+
+# VSCode
+.vscode/
+
+# Logs
