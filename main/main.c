@@ -76,9 +76,8 @@ void app_main(void)
     ESP_LOGI(TAG, "SPI Shared Bus initialized!");
 
     lcd_init(&lcd, SPI2_HOST);
+    lcd_set_rotation(&lcd, 1);
     ESP_LOGI(TAG, "LCD initialized!");
-
-    ESP_LOGI(TAG, "SD Card initialized!");
 
     //vTaskLCD has higher priority than other tasks
     xTaskCreate(vTaskLCD, "LCD Task", 4096 * 2, NULL, 4, NULL);

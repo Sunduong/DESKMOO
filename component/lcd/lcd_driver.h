@@ -41,5 +41,4 @@ void lcd_draw_hline(lcd_t *lcd, uint16_t x, uint16_t y, uint16_t width, uint32_t
 void lcd_draw_vline(lcd_t *lcd, uint16_t x, uint16_t y, uint16_t height, uint32_t color);
 void lcd_draw_rect(lcd_t *lcd, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint32_t color);
 void lcd_draw_bitmap(lcd_t *lcd, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint8_t *data);
-void lcd_send_data_psram_dma(lcd_t *lcd, const uint8_t *data, uint32_t total_data_byte);
 #endif // LCD_DRIVER_H

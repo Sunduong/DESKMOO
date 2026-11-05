@@ -221,6 +221,13 @@ void lcd_fill_rect(lcd_t *lcd, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y
     Upgrade later for timeout + error handling */
     ESP_ERROR_CHECK(spi_device_acquire_bus(lcd->spi, portMAX_DELAY));
 
+    if (lcd == NULL) return;
+    if (x1 > x2 || y1 > y2) return;
+    if (x1 >= lcd->width || y1 >= lcd->height) return;
+    
+    if (x2 >= lcd->width) x2 = lcd->width - 1;
+    if (y2 >= lcd->height) y2 = lcd->height - 1;
+
     // Set the drawing window
     lcd_set_window(lcd, x1, y1, x2, y2);
     
@@ -370,42 +377,7 @@ void lcd_draw_bitmap(lcd_t *lcd, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t
     // lcd_send_data(lcd, data, height * width * 3);
     // If caller provides a PSRAM-backed buffer and the platform supports
     // DMA from external RAM, callers may instead call `lcd_send_data_psram_dma`.
-    lcd_send_data_psram_dma(lcd, data, total_data_byte);
+    lcd_send_data_queue(lcd, data, total_data_byte);
     spi_device_release_bus(lcd->spi);
 }
 
-/**
- * @brief Send data from PSRAM directly to LCD using DMA-capable transactions.
- *
- * This function attempts to transmit directly from the provided `data`
- * pointer in chunks no larger than `SPI_BUS_MAX_TRANSFER_SIZE` using
- * polling transmits. If the underlying platform and allocation support
- * DMA from external RAM, this avoids copying into an intermediate buffer.
- */
-void lcd_send_data_psram_dma(lcd_t *lcd, const uint8_t *data, uint32_t total_data_byte)
-{
-    if (total_data_byte == 0) return;
-    if (data == NULL) return;
-    // Determine safe maximum chunk size based on compile-time and SOC limits
-    uint32_t soc_max = SOC_SPI_MAXIMUM_BUFFER_SIZE;
-    uint32_t max_chunk = (SPI_BUS_MAX_TRANSFER_SIZE < soc_max) ? SPI_BUS_MAX_TRANSFER_SIZE : soc_max;
-    if (max_chunk == 0) max_chunk = 4096; // sensible default
-    ESP_LOGI(TAG, "lcd_send_data_psram_dma: total=%u, max_chunk=%u", (unsigned)total_data_byte, (unsigned)max_chunk);
-
-    uint32_t offset = 0;
-    while (offset < total_data_byte)
-    {
-        uint32_t remaining = total_data_byte - offset;
-        uint32_t chunk = (remaining > max_chunk) ? max_chunk : remaining;
-
-        spi_transaction_t t;
-        memset(&t, 0, sizeof(t));
-        t.length = chunk * 8U;
-        t.tx_buffer = data + offset;
-        t.user = (void*)1; // DC high for data
-        esp_err_t err = spi_device_polling_transmit(lcd->spi, &t);
-        if (err == ESP_OK) {
-            offset += chunk;
-        }
-    }
-}
