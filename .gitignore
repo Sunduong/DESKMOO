@@ -1,7 +1,6 @@
 # ESP-IDF build output
 build/
 sdkconfig
-sdkconfig.old
 
 # ESP-IDF component manager
 managed_components/
