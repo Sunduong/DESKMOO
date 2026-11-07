@@ -19,3 +19,7 @@ sdkconfig.defaults.esp32s2
 .vscode/
 
 # Logs
+
+# My UI resources
+/main/assets
+*.png
