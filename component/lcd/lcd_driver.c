@@ -3,9 +3,15 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "esp_heap_caps.h"
 #include <string.h>
 
 static const char *TAG = "LCD_DRIVER";
+
+_Static_assert(CHUNK_SIZE_PER_TRANSACTION % 3 == 0,
+               "RGB666 DMA chunks must contain complete pixels");
+_Static_assert(CHUNK_SIZE_PER_TRANSACTION % 4 == 0,
+               "SPI DMA chunks must be 4-byte aligned");
 
 static void lcd_spi_pre_transfer(spi_transaction_t *t)
 {
@@ -187,7 +193,7 @@ void lcd_set_rotation(lcd_t *lcd, uint8_t rotation)
             lcd->height = LCD_HEIGHT;
             break;
         case 1: // Landscape (Rotate 90° CW-clockwise)
-            madctl = 0x60;
+            madctl = 0xE8;
             lcd->width = LCD_HEIGHT;
             lcd->height = LCD_WIDTH;
             break;
@@ -306,50 +312,52 @@ void lcd_draw_rect(lcd_t *lcd, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y
     lcd_draw_vline(lcd, x1, y1, y2 - y1 + 1, color); //Left line
 }
 
-static spi_transaction_t trans_pool[LCD_QUEUE_SIZE];
-
-static void lcd_send_data_queue(lcd_t *lcd, const uint8_t *data, uint32_t total_data_byte)
+static esp_err_t lcd_send_data_dma_chunks(lcd_t *lcd, const uint8_t *data,
+                                          uint32_t total_data_byte)
 {
-    if (total_data_byte == 0) return; // No need to send anything
-    if (data == NULL) return; // No data to send
+    if (lcd == NULL || data == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (total_data_byte == 0) {
+        return ESP_OK;
+    }
+
+    uint8_t *dma_buffer = heap_caps_malloc(CHUNK_SIZE_PER_TRANSACTION,
+                                           MALLOC_CAP_DMA);
+    if (dma_buffer == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate bitmap DMA buffer");
+        return ESP_ERR_NO_MEM;
+    }
 
     uint32_t offset = 0;
-    int queued = 0; // Số transaction đang chờ trong queue
-    int trans_idx = 0; // Index trong trans_pool
+    esp_err_t err = ESP_OK;
 
-    while (offset < total_data_byte)
-    {
-        // Calculate chunk size
-        int chunk = (total_data_byte - offset > CHUNK_SIZE_PER_TRANSACTION) ? CHUNK_SIZE_PER_TRANSACTION : (total_data_byte - offset);
+    while (offset < total_data_byte) {
+        uint32_t remaining = total_data_byte - offset;
+        uint32_t chunk = remaining > CHUNK_SIZE_PER_TRANSACTION
+                             ? CHUNK_SIZE_PER_TRANSACTION
+                             : remaining;
 
-        // Setup Transaction and clear any previous transaction state
-        spi_transaction_t *t = &trans_pool[trans_idx % LCD_QUEUE_SIZE]; // Circular buffer
-        memset(t, 0, sizeof(*t));
-        t->length = chunk * 8;
-        t->tx_buffer = data + offset;
-        t->user = (void*) 1; // DC high for data
+        memcpy(dma_buffer, data + offset, chunk);
 
-        spi_device_queue_trans(lcd->spi, t, portMAX_DELAY);
-        queued++;
-        trans_idx++;
-        offset += chunk;
+        spi_transaction_t transaction = {
+            .length = chunk * 8,
+            .tx_buffer = dma_buffer,
+            .user = (void *)1,
+        };
 
-        // Nếu queue gần đầy → chờ ít nhất 1 transaction xong
-        if (queued >= LCD_QUEUE_SIZE - 1)
-        {
-            spi_transaction_t *ret;
-            spi_device_get_trans_result(lcd->spi, &ret, portMAX_DELAY);
-            queued--;
+        err = spi_device_polling_transmit(lcd->spi, &transaction);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Bitmap transfer failed at byte %lu: %s",
+                     (unsigned long)offset, esp_err_to_name(err));
+            break;
         }
+
+        offset += chunk;
     }
- 
-    // Chờ tất cả transactions còn lại hoàn tất
-    while (queued > 0)
-    {
-        spi_transaction_t *ret;
-        spi_device_get_trans_result(lcd->spi, &ret, portMAX_DELAY);
-        queued--;
-    }
+
+    free(dma_buffer);
+    return err;
 }
 
 /**
@@ -374,10 +382,7 @@ void lcd_draw_bitmap(lcd_t *lcd, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t
 
     ESP_ERROR_CHECK(spi_device_acquire_bus(lcd->spi, portMAX_DELAY));
     lcd_set_window(lcd, x1, y1, x2, y2);
-    // lcd_send_data(lcd, data, height * width * 3);
-    // If caller provides a PSRAM-backed buffer and the platform supports
-    // DMA from external RAM, callers may instead call `lcd_send_data_psram_dma`.
-    lcd_send_data_queue(lcd, data, total_data_byte);
+    ESP_ERROR_CHECK(lcd_send_data_dma_chunks(lcd, data, total_data_byte));
     spi_device_release_bus(lcd->spi);
 }
 

@@ -20,7 +20,9 @@
 #define LCD_RESET_PIN       7
 
 // ──────────────────────────── SPI setting ────────────────────────────
-#define CHUNK_SIZE_PER_TRANSACTION  4096
+// RGB666 needs 3 bytes per pixel, and SPI DMA prefers 4-byte alignment.
+// 4092 is divisible by both 3 and 4, so a transaction never splits a pixel.
+#define CHUNK_SIZE_PER_TRANSACTION  4092
 #define SPI_BUS_MAX_TRANSFER_SIZE   (64 * 1024)
 #define LCD_QUEUE_SIZE              7
 
