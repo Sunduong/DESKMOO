@@ -23,3 +23,5 @@ sdkconfig.defaults.esp32s2
 # My UI resources
 /main/assets
 *.png
+*.aseprite
+/tool/mascot_generator/output/

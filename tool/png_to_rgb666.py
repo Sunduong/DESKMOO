@@ -2,7 +2,7 @@
 from PIL import Image
 from pathlib import Path
 
-INPUT = Path("Side_strech_final7.png")
+INPUT = Path("Side_strech_final1.png")
 OUTPUT = Path("background_rgb666.h")
 
 WIDTH = 480

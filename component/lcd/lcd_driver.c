@@ -2,6 +2,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include <stddef.h>
 #include "esp_err.h"
 #include "esp_heap_caps.h"
 #include <string.h>
@@ -382,7 +383,50 @@ void lcd_draw_bitmap(lcd_t *lcd, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t
 
     ESP_ERROR_CHECK(spi_device_acquire_bus(lcd->spi, portMAX_DELAY));
     lcd_set_window(lcd, x1, y1, x2, y2);
-    ESP_ERROR_CHECK(lcd_send_data_dma_chunks(lcd, data, total_data_byte));
+    esp_err_t err = lcd_send_data_dma_chunks(lcd, data, total_data_byte);
     spi_device_release_bus(lcd->spi);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Bitmap drawing failed: %s", esp_err_to_name(err));
+    }
+}
+
+// ═══════════════════════════════════════════════════════
+// PUBLIC: DESKMOO support Functions
+// ═══════════════════════════════════════════════════════
+
+/*  Streaming API
+    Resource decoder --> Compositor --> Streaming LCD interface
+*/
+esp_err_t lcd_streaming_begin_write(lcd_t *lcd, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
+{
+    if (lcd == NULL) return ESP_ERR_INVALID_ARG;
+    if (x1 > x2 || y1 > y2) return ESP_ERR_INVALID_ARG;
+    if (x1 >= lcd->width || y1 >= lcd->height) return ESP_ERR_INVALID_ARG;
+
+    esp_err_t err = spi_device_acquire_bus(lcd->spi, portMAX_DELAY);
+    if (err != ESP_OK) return err;
+
+    lcd_set_window(lcd, x1, y1, x2, y2);
+    return ESP_OK;
+}
+
+esp_err_t lcd_streaming_write(lcd_t *lcd, const uint8_t *data, size_t data_len)
+{
+    if (lcd == NULL || data == NULL || data_len == 0) return ESP_ERR_INVALID_ARG;
+    spi_transaction_t transaction = {
+        .length = data_len * 8,
+        .tx_buffer = data,
+        .user = (void *)1,
+    };
+    return spi_device_polling_transmit(lcd->spi, &transaction);
+}
+
+void lcd_streaming_end_write(lcd_t *lcd)
+{
+    if (lcd != NULL)
+    {
+        spi_device_release_bus(lcd->spi);
+    }
 }
 

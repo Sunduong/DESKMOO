@@ -41,4 +41,12 @@ void lcd_draw_hline(lcd_t *lcd, uint16_t x, uint16_t y, uint16_t width, uint32_t
 void lcd_draw_vline(lcd_t *lcd, uint16_t x, uint16_t y, uint16_t height, uint32_t color);
 void lcd_draw_rect(lcd_t *lcd, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint32_t color);
 void lcd_draw_bitmap(lcd_t *lcd, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint8_t *data);
+
+// ═══════════════════════════════════════════════════════
+// PUBLIC: DESKMOO support Functions
+// ═══════════════════════════════════════════════════════
+esp_err_t lcd_streaming_begin_write(lcd_t *lcd, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
+esp_err_t lcd_streaming_write(lcd_t *lcd, const uint8_t *data, size_t data_len);
+void lcd_streaming_end_write(lcd_t *lcd);
+
 #endif // LCD_DRIVER_H
