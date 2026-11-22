@@ -8,6 +8,7 @@
 #include "esp_timer.h"
 #include "mascot_renderer.h"
 #include "lvgl.h"
+#include "encoder_driver.h"
 
 static const char *TAG = "APP_MAIN";
 lcd_t lcd;
@@ -217,6 +218,37 @@ static void mascot_animation_task(void *pvParameters)
     }
 }
 
+static void encoder_driver_task(void *pvParameters)
+{
+    (void) pvParameters;
+    int32_t total_rotation_steps = 0;
+    bool previous_button_pressed = encoder_driver_is_pressed();
+    ESP_LOGI("ENCODER_TEST", "Starting encoder test task");
+    
+    while (1)
+    {
+        /* Read accumulated rotation steps */
+        int16_t rotation_steps = encoder_driver_get_diff();
+
+        /* Read debounced push-button state */
+        bool button_pressed = encoder_driver_is_pressed();
+
+        if (rotation_steps != 0)
+        {
+            total_rotation_steps += rotation_steps;
+            ESP_LOGI("ENCODER_TEST", "Rotation: %s, steps: %d, total: %ld", rotation_steps > 0 ? "CW" : "CCW", (int)rotation_steps, (long)total_rotation_steps);
+        }
+
+        if (button_pressed != previous_button_pressed)
+        {
+            ESP_LOGI("ENCODER_TEST", "Button state changed: %s", button_pressed ? "PRESSED" : "RELEASED");
+            previous_button_pressed = button_pressed;
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10)); // Polling interval
+    }
+}
+
 void app_main(void)
 {
     spi_bus_init(SPI2_HOST); // Initialize the shared SPI bus for both LCD and SD card.
@@ -227,6 +259,9 @@ void app_main(void)
     lcd_set_rotation(&lcd, 1);
     ESP_LOGI(TAG, "Drawing RGB666 background...");
 
+    ESP_ERROR_CHECK(encoder_driver_init());
+    ESP_LOGI(TAG, "KY-040 Encoder initialized!");
+
     uint64_t start_timer = esp_timer_get_time();
     lcd_draw_bitmap(&lcd, 0, 0, lcd.width - 1, lcd.height - 1, background_rgb666);
     uint64_t end_timer = esp_timer_get_time();
@@ -234,6 +269,6 @@ void app_main(void)
     ESP_LOGI(TAG, "RGB666 background transfer complete in %.2f ms", elapsed_time_us / 1000.0);
 
     xTaskCreate(mascot_animation_task, "Mascot Animation Task", 4096, NULL, 5, NULL);
-    xTaskCreate(deskmoo_lvgl_task, "Deskmoo LVGL Task", 8192, NULL, 4, NULL);
+    // xTaskCreate(deskmoo_lvgl_task, "Deskmoo LVGL Task", 8192, NULL, 4, NULL);
+    xTaskCreate(encoder_driver_task, "Encoder Driver Task", 3072, NULL, 3, NULL);
 }
-

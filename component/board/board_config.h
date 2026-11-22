@@ -27,19 +27,8 @@
 #define LCD_QUEUE_SIZE              7
 
 // ──────────────────────────── BUTTON setting ────────────────────────────
-#define BUTTON_UP_PIN           4
-#define BUTTON_DOWN_PIN         5
-#define BUTTON_SELECT_PIN       6
-#define BUTTON_BACK_PIN         15
-
-typedef enum {
-    BUTTON_UP = 0,
-    BUTTON_DOWN,
-    BUTTON_SELECT,
-    BUTTON_BACK,
-    BUTTON_MAX,
-} button_id_t;
-
-extern const gpio_num_t button_pins[];
+#define ENCODER_CLK_PIN         4
+#define ENCODER_DT_PIN          5
+#define ENCODER_SW_PIN          6
 
 #endif //BOARD_CONFIG_H
