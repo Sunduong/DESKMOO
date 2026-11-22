@@ -1,0 +1,72 @@
+<screen>
+	<view style_bg_color="0x173c19">
+		<!-- Title -->
+		<lv_label
+			text="DESKMOO"
+			align="top_mid"
+			y="30"
+			style_text_color="0xFFFFFF"
+		/>
+
+		<!-- Navigation bar -->
+		<!-- Navigation bar background -->
+		<lv_image src="nav_default" align="bottom_mid" />
+
+		<!-- HOME button -->
+		<lv_button
+			name="btn_home"
+			align="bottom_left"
+			x="0"
+			y="0"
+			width="159"
+			height="34"
+			style_bg_opa="0"
+			style_border_width="0"
+			style_shadow_width="0"
+			style_outline_width="0"
+			style_radius="0"
+			style_pad_all="0"
+			style_bg_image_src-focused="home_focused"
+			style_bg_image_src-checked="home_selected"
+			style_bg_image_src-checked-focused="home_focused_selected"
+		/>
+
+		<!-- STATS button -->
+		<lv_button
+			name="btn_stats"
+			align="bottom_left"
+			x="159"
+			y="0"
+			width="164"
+			height="34"
+			style_bg_opa="0"
+			style_border_width="0"
+			style_shadow_width="0"
+			style_outline_width="0"
+			style_radius="0"
+			style_pad_all="0"
+			style_bg_image_src-focused="stats_focused"
+			style_bg_image_src-checked="stats_selected"
+			style_bg_image_src-checked-focused="stats_focused_selected"
+		/>
+
+		<!-- SETTINGS button -->
+		<lv_button
+			name="btn_settings"
+			align="bottom_left"
+			x="323"
+			y="0"
+			width="157"
+			height="34"
+			style_bg_opa="0"
+			style_border_width="0"
+			style_shadow_width="0"
+			style_outline_width="0"
+			style_radius="0"
+			style_pad_all="0"
+			style_bg_image_src-focused="settings_focused"
+			style_bg_image_src-checked="settings_selected"
+			style_bg_image_src-checked-focused="settings_focused_selected"
+		/>
+	</view>
+</screen>

@@ -9,6 +9,8 @@
 #include "mascot_renderer.h"
 #include "lvgl.h"
 #include "encoder_driver.h"
+#include "navigation_controller.h"
+#include "DESKMOO_UI.h"
 
 static const char *TAG = "APP_MAIN";
 lcd_t lcd;
@@ -35,8 +37,8 @@ static void deskmoo_flush_cb(lv_display_t *display, const lv_area_t *area, uint8
 
     const int32_t width = area->x2 - area->x1 + 1;
     const int32_t height = area->y2 - area->y1 + 1;
-    const int32_t nav_y = lcd->height - NAV_BAR_HEIGHT;
-    ESP_LOGI(TAG, "width %ld, height %ld, nav_y %ld", width, height, nav_y);
+    // const int32_t nav_y = lcd->height - NAV_BAR_HEIGHT;
+    // ESP_LOGI(TAG, "width %ld, height %ld, nav_y %ld", width, height, nav_y);
     /*
      * Dành cho RGB565 + PARTIAL, với stride mặc định của LVGL.
      *
@@ -54,11 +56,11 @@ static void deskmoo_flush_cb(lv_display_t *display, const lv_area_t *area, uint8
      * Stride is 6 bytes.
      */
     const uint32_t stride = lv_draw_buf_width_to_stride(width, LV_COLOR_FORMAT_RGB565);
-    ESP_LOGI(TAG, "stride %ld", stride);
+    ESP_LOGD(TAG, "stride %ld", stride);
 
-    ESP_LOGI("LVGL_FLUSH", "START");
-    ESP_ERROR_CHECK(lcd_streaming_begin_write(lcd, area->x1, nav_y + area->y1, area->x2, nav_y + area->y2));
-    ESP_LOGI("LVGL_FLUSH", "SPI ACQUIRED");
+    ESP_LOGD("LVGL_FLUSH", "START");
+    ESP_ERROR_CHECK(lcd_streaming_begin_write(lcd, area->x1, area->y1, area->x2, area->y2));
+    ESP_LOGD("LVGL_FLUSH", "SPI ACQUIRED");
 
     esp_err_t err = ESP_OK;
     for (int32_t y = 0; y < height; y++)
@@ -90,7 +92,7 @@ static void deskmoo_flush_cb(lv_display_t *display, const lv_area_t *area, uint8
     }
 
     lcd_streaming_end_write(lcd);
-    ESP_LOGI("LVGL_FLUSH", "DONE");
+    ESP_LOGD("LVGL_FLUSH", "DONE");
     ESP_ERROR_CHECK(err);
     lv_display_flush_ready(display);
 }
@@ -118,7 +120,7 @@ static void deskmoo_home_button_event_callback(lv_event_t * event)
 
 lv_display_t *deskmoo_lvgl_display_init(lcd_t *lcd)
 {
-    lv_display_t *display = lv_display_create(NAV_BAR_WIDTH, NAV_BAR_HEIGHT);
+    lv_display_t *display = lv_display_create(lcd->width, lcd->height);
     configASSERT(display != NULL);
     lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565);
     lv_display_set_buffers(display, draw_buffer, NULL, sizeof(draw_buffer), LV_DISPLAY_RENDER_MODE_PARTIAL);
@@ -145,42 +147,10 @@ static void deskmoo_lvgl_task(void *pvParameters)
     }
 
     lv_display_set_default(display);
-    lv_obj_t *screen = lv_screen_active();
-
-    /* Nền toàn footer. */
-    lv_obj_set_style_bg_color(screen, lv_color_hex(0xFFFFFF), 0);
-    lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, 0);
-
-    /* Button là con của screen footer. */
-    lv_obj_t *home_btn = lv_button_create(screen);
-
-    lv_obj_set_size(home_btn, 120, 28);
-    lv_obj_center(home_btn);
-
-    /* Hình thức của button. */
-    lv_obj_set_style_bg_color(home_btn, lv_color_hex(0x205080), 0);
-    lv_obj_set_style_bg_opa(home_btn, LV_OPA_COVER, 0);
-
-    lv_obj_set_style_border_width(home_btn, 2, 0);
-    lv_obj_set_style_border_color(home_btn, lv_color_hex(0x102840), 0);
-
-    lv_obj_set_style_radius(home_btn, 6, 0);
-    lv_obj_set_style_pad_all(home_btn, 0, 0);
-    lv_obj_set_style_shadow_width(home_btn, 0, 0);
-
-    /* Label là con của button. */
-    lv_obj_t *home_label = lv_label_create(home_btn);
-
-    lv_label_set_text(home_label, "HOME 0");
-    lv_obj_set_style_text_color(home_label, lv_color_hex(0xFFFFFF), 0);
-    lv_obj_center(home_label);
-
-    lv_obj_add_event_cb(home_btn, deskmoo_home_button_event_callback, LV_EVENT_SHORT_CLICKED, home_label);
-
-    /* Tao mot timer de test button event */
-    lv_timer_t *test_timer = lv_timer_create(deskmoo_test_click_callback, 1000, home_btn);
-    configASSERT(test_timer != NULL);
-
+    DESKMOO_UI_init("");
+    lv_obj_t *home = screen_home_create();
+    lv_screen_load(home);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(navigation_controller_init(home));
     while (true)
     {
         lv_timer_handler();
@@ -218,37 +188,6 @@ static void mascot_animation_task(void *pvParameters)
     }
 }
 
-static void encoder_driver_task(void *pvParameters)
-{
-    (void) pvParameters;
-    int32_t total_rotation_steps = 0;
-    bool previous_button_pressed = encoder_driver_is_pressed();
-    ESP_LOGI("ENCODER_TEST", "Starting encoder test task");
-    
-    while (1)
-    {
-        /* Read accumulated rotation steps */
-        int16_t rotation_steps = encoder_driver_get_diff();
-
-        /* Read debounced push-button state */
-        bool button_pressed = encoder_driver_is_pressed();
-
-        if (rotation_steps != 0)
-        {
-            total_rotation_steps += rotation_steps;
-            ESP_LOGI("ENCODER_TEST", "Rotation: %s, steps: %d, total: %ld", rotation_steps > 0 ? "CW" : "CCW", (int)rotation_steps, (long)total_rotation_steps);
-        }
-
-        if (button_pressed != previous_button_pressed)
-        {
-            ESP_LOGI("ENCODER_TEST", "Button state changed: %s", button_pressed ? "PRESSED" : "RELEASED");
-            previous_button_pressed = button_pressed;
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(10)); // Polling interval
-    }
-}
-
 void app_main(void)
 {
     spi_bus_init(SPI2_HOST); // Initialize the shared SPI bus for both LCD and SD card.
@@ -270,5 +209,5 @@ void app_main(void)
 
     xTaskCreate(mascot_animation_task, "Mascot Animation Task", 4096, NULL, 5, NULL);
     // xTaskCreate(deskmoo_lvgl_task, "Deskmoo LVGL Task", 8192, NULL, 4, NULL);
-    xTaskCreate(encoder_driver_task, "Encoder Driver Task", 3072, NULL, 3, NULL);
+    xTaskCreate(deskmoo_lvgl_task, "Deskmoo LVGL Task", 8192, NULL, 4, NULL);
 }

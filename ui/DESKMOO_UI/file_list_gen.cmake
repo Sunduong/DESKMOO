@@ -1,0 +1,16 @@
+list(
+  APPEND
+  LV_EDITOR_PROJECT_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/DESKMOO_UI_gen.c
+  ${CMAKE_CURRENT_LIST_DIR}/DESKMOO_UI.c
+  ${CMAKE_CURRENT_LIST_DIR}/images/home_focused_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/images/home_focused_selected_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/images/home_selected_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/images/nav_default_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/images/settings_focused_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/images/settings_focused_selected_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/images/settings_selected_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/images/stats_focused_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/images/stats_focused_selected_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/images/stats_selected_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/screens/screen_home_gen.c)

@@ -25,3 +25,4 @@ sdkconfig.defaults.esp32s2
 *.png
 *.aseprite
 /tool/mascot_generator/output/
+ui/DESKMOO_UI/images

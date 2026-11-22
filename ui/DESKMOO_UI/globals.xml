@@ -1,0 +1,80 @@
+<globals>
+	<api>
+		<!-- Add <enumdefs> here -->
+	</api>
+
+	<consts>
+		<!-- Add <px>, <int>, <color> etc here -->
+	</consts>
+
+	<subjects>
+		<!-- Add <int>, <string>, or <float> subjects here -->
+	</subjects>
+
+	<images>
+		<data
+			name="nav_default"
+			src_path="images/navigation/nav_default.png"
+			color_format="rgb565a8"
+		/>
+
+		<!-- HOME -->
+		<data
+			name="home_focused"
+			src_path="images/navigation/home_focused.png"
+			color_format="rgb565a8"
+		/>
+		<data
+			name="home_selected"
+			src_path="images/navigation/home_selected.png"
+			color_format="rgb565a8"
+		/>
+		<data
+			name="home_focused_selected"
+			src_path="images/navigation/home_focused_selected.png"
+			color_format="rgb565a8"
+		/>
+
+		<!-- STATS -->
+		<data
+			name="stats_focused"
+			src_path="images/navigation/stats_focused.png"
+			color_format="rgb565a8"
+		/>
+		<data
+			name="stats_selected"
+			src_path="images/navigation/stats_selected.png"
+			color_format="rgb565a8"
+		/>
+		<data
+			name="stats_focused_selected"
+			src_path="images/navigation/stats_focused_selected.png"
+			color_format="rgb565a8"
+		/>
+
+		<!-- SETTINGS -->
+		<data
+			name="settings_focused"
+			src_path="images/navigation/settings_focused.png"
+			color_format="rgb565a8"
+		/>
+		<data
+			name="settings_selected"
+			src_path="images/navigation/settings_selected.png"
+			color_format="rgb565a8"
+		/>
+		<data
+			name="settings_focused_selected"
+			src_path="images/navigation/settings_focused_selected.png"
+			color_format="rgb565a8"
+		/>
+	</images>
+
+	<fonts>
+		<!-- Add <bin> , <tiny_ttf>, <freetype> tags here -->
+	</fonts>
+
+	<styles>
+		<!-- Add <style> tags here -->
+	</styles>
+</globals>

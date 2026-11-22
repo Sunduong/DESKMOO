@@ -6,6 +6,8 @@
 
 #include "board_config.h"
 #include "driver/gpio.h"
+#include "soc/gpio_reg.h"
+#include "soc/soc.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -78,8 +80,11 @@ static const int8_t s_quadrature_transition_table[16] = {
 /* Read encoder CLK/DT as a 2-bit state */
 static inline uint8_t encoder_read_ab(void)
 {
-    uint8_t a = (uint8_t)gpio_get_level(ENCODER_CLK_PIN);
-    uint8_t b = (uint8_t)gpio_get_level(ENCODER_DT_PIN);
+    /* Sample CLK and DT at the same instant on the ESP32-S3. */
+    _Static_assert(ENCODER_CLK_PIN < 32 && ENCODER_DT_PIN < 32, "Encoder inputs must be in GPIO bank 0");
+    uint32_t levels = REG_READ(GPIO_IN_REG);
+    uint8_t a = (levels >> ENCODER_CLK_PIN) & 1U;
+    uint8_t b = (levels >> ENCODER_DT_PIN) & 1U;
 
     return (uint8_t)((a << 1) | b);
 }
